@@ -40,10 +40,8 @@ class MapFragment :
 
     private fun setupView() {
         val mapFragment =
-            childFragmentManager.findFragmentById(R.id.mapFragment) as SupportMapFragment
-        mapFragment.getMapAsync(
-            this@MapFragment
-        )
+            childFragmentManager.findFragmentById(R.id.mapFragment) as SupportMapFragment?
+        mapFragment?.getMapAsync(this@MapFragment)
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
