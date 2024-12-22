@@ -2,33 +2,18 @@ package com.zhadko.mapsapp.screens.mapScreen
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.drawable.DrawableCompat
-import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptor
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.CircleOptions
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.PolygonOptions
-import com.google.android.gms.maps.model.PolylineOptions
 import com.zhadko.mapsapp.R
 import com.zhadko.mapsapp.base.BaseFragment
 import com.zhadko.mapsapp.databinding.FragmentMapBinding
+import com.zhadko.mapsapp.utils.extensions.checkSinglePermission
 
 class MapFragment :
     BaseFragment<FragmentMapBinding>(FragmentMapBinding::inflate),
@@ -88,11 +73,7 @@ class MapFragment :
     }
 
     private fun checkLocationPermissions() {
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
+        if (checkSinglePermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
             map.isMyLocationEnabled = true
         } else {
             locationPermissionsLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
