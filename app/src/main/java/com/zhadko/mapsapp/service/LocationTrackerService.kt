@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_LOW
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.os.Build
@@ -33,6 +34,9 @@ class LocationTrackerService : Service() {
 
     companion object {
         val locationList = MutableStateFlow(mutableListOf<LatLng>())
+
+        val startTime = MutableStateFlow(0L)
+        val stopTime = MutableStateFlow(0L)
     }
 
     @Inject
@@ -71,7 +75,10 @@ class LocationTrackerService : Service() {
                     startTrackingLocation()
                 }
 
-                ACTION_STOP_LOCATION_TRACK -> {}
+                ACTION_STOP_LOCATION_TRACK -> {
+                    stopForegroundService()
+                }
+
                 else -> {}
             }
         }
@@ -95,6 +102,7 @@ class LocationTrackerService : Service() {
             locationCallback,
             Looper.getMainLooper()
         )
+        startTime.update { System.currentTimeMillis() }
     }
 
     private fun updateLocationList(location: Location) {
@@ -105,6 +113,20 @@ class LocationTrackerService : Service() {
             locationList.update { this }
             Log.d("ssfsfdsfds", this.toString())
         }
+    }
+
+    private fun stopForegroundService() {
+        removeLocationUpdates()
+        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(
+            NOTIFICATION_ID
+        )
+        stopForeground(true)
+        stopSelf()
+        stopTime.update { System.currentTimeMillis() }
+    }
+
+    private fun removeLocationUpdates() {
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
     }
 
     private fun createNotificationChannel() {

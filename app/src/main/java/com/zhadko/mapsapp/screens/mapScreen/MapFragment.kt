@@ -27,6 +27,7 @@ import com.zhadko.mapsapp.base.BaseFragment
 import com.zhadko.mapsapp.databinding.FragmentMapBinding
 import com.zhadko.mapsapp.service.LocationTrackerService
 import com.zhadko.mapsapp.utils.Const.ACTION_START_LOCATION_TRACK
+import com.zhadko.mapsapp.utils.Const.ACTION_STOP_LOCATION_TRACK
 import com.zhadko.mapsapp.utils.extensions.checkSinglePermission
 import com.zhadko.mapsapp.utils.map.MapUtil.setCameraPosition
 import dagger.hilt.android.AndroidEntryPoint
@@ -75,14 +76,32 @@ class MapFragment :
 
         with(binding) {
             startButton.setOnClickListener { onStartButtonClicked() }
-            stopButton.setOnClickListener { }
+            stopButton.setOnClickListener { onStopButtonClicked() }
             resetButton.setOnClickListener { }
         }
     }
 
+    private fun onStopButtonClicked() {
+        stopForegroundService()
+        with(binding) {
+            stopButton.isVisible = false
+            startButton.isVisible = true
+        }
+    }
+
+    private fun stopForegroundService() {
+        binding.startButton.isEnabled = false
+        sendActionCommandToService(ACTION_STOP_LOCATION_TRACK)
+    }
+
     private fun onStartButtonClicked() {
         if (checkSinglePermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
-            startLocationService(ACTION_START_LOCATION_TRACK)
+            sendActionCommandToService(ACTION_START_LOCATION_TRACK)
+            with(binding) {
+                startButton.isEnabled = false
+                startButton.isVisible = false
+                stopButton.isVisible = true
+            }
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                 backgroundLocationPermissionsLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
@@ -150,7 +169,7 @@ class MapFragment :
         }
     }
 
-    private fun startLocationService(action: String) {
+    private fun sendActionCommandToService(action: String) {
         Intent(requireContext(), LocationTrackerService::class.java).apply {
             this.action = action
             requireContext().startService(this)
