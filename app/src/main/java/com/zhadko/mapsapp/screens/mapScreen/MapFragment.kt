@@ -2,6 +2,8 @@ package com.zhadko.mapsapp.screens.mapScreen
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.graphics.Color
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
@@ -10,18 +12,28 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.GoogleMap.OnMyLocationClickListener
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.ButtCap
+import com.google.android.gms.maps.model.JointType
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.gms.maps.model.PolylineOptions
 import com.zhadko.mapsapp.R
 import com.zhadko.mapsapp.base.BaseFragment
 import com.zhadko.mapsapp.databinding.FragmentMapBinding
+import com.zhadko.mapsapp.service.LocationTrackerService
+import com.zhadko.mapsapp.utils.Const.ACTION_START_LOCATION_TRACK
 import com.zhadko.mapsapp.utils.extensions.checkSinglePermission
+import com.zhadko.mapsapp.utils.map.MapUtil.setCameraPosition
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class MapFragment :
     BaseFragment<FragmentMapBinding>(FragmentMapBinding::inflate),
     OnMapReadyCallback,
@@ -30,6 +42,8 @@ class MapFragment :
     companion object {
         private const val MAP_LOG = "MAP_LOG"
     }
+
+    private var locationList = mutableListOf<LatLng>()
 
     @SuppressLint("MissingPermission")
     private val locationPermissionsLauncher =
@@ -68,7 +82,7 @@ class MapFragment :
 
     private fun onStartButtonClicked() {
         if (checkSinglePermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
-            Log.d(MAP_LOG, "Permissions already enabled")
+            startLocationService(ACTION_START_LOCATION_TRACK)
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                 backgroundLocationPermissionsLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
@@ -89,6 +103,58 @@ class MapFragment :
             isMyLocationButtonEnabled = true
         }
         checkLocationPermissions()
+        observeLocationList()
+    }
+
+    private fun observeLocationList() {
+        lifecycleScope.launch {
+            LocationTrackerService.locationList.collect {
+                locationList = it
+                drawPolyline()
+                followPolyLine()
+            }
+        }
+    }
+
+    private fun drawPolyline() {
+        map.addPolyline(
+            PolylineOptions().apply {
+                width(10f)
+                color(Color.BLUE)
+                jointType(JointType.ROUND)
+                startCap(ButtCap())
+                endCap(ButtCap())
+                addAll(locationList)
+            }
+        )
+    }
+
+    private fun followPolyLine() {
+        if (locationList.isNotEmpty()) {
+            map.animateCamera(
+                CameraUpdateFactory.newCameraPosition(
+                    setCameraPosition(locationList.last())
+                ), 1000, null
+            )
+        }
+    }
+
+    override fun onMyLocationClick(myLocation: Location) {
+        with(binding) {
+            hintText.animate().alpha(0f).duration = 1500
+            lifecycleScope.launch {
+                delay(2500)
+                hintText.isVisible = false
+                startButton.isVisible = true
+            }
+        }
+    }
+
+    private fun startLocationService(action: String) {
+        Intent(requireContext(), LocationTrackerService::class.java).apply {
+            this.action = action
+            requireContext().startService(this)
+        }
     }
 
     private fun setupCustomMapStyle() {
@@ -112,17 +178,6 @@ class MapFragment :
             map.isMyLocationEnabled = true
         } else {
             locationPermissionsLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-    }
-
-    override fun onMyLocationClick(myLocation: Location) {
-        with(binding) {
-            hintText.animate().alpha(0f).duration = 1500
-            lifecycleScope.launch {
-                delay(2500)
-                hintText.isVisible = false
-                startButton.isVisible = true
-            }
         }
     }
 }
