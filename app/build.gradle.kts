@@ -49,6 +49,7 @@ dependencies {
     //Google maps
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
+    implementation(libs.android.maps.utils)
 
     //Hilt
     implementation(libs.hilt.android)

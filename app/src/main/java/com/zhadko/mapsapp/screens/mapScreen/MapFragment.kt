@@ -20,6 +20,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.ButtCap
 import com.google.android.gms.maps.model.JointType
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.PolylineOptions
 import com.zhadko.mapsapp.R
@@ -45,6 +46,9 @@ class MapFragment :
     }
 
     private var locationList = mutableListOf<LatLng>()
+
+    private var startTime = 0L
+    private var stopTime = 0L
 
     @SuppressLint("MissingPermission")
     private val locationPermissionsLauncher =
@@ -133,6 +137,34 @@ class MapFragment :
                 followPolyLine()
             }
         }
+
+        lifecycleScope.launch {
+            LocationTrackerService.startTime.collect {
+                startTime = it
+            }
+        }
+
+        lifecycleScope.launch {
+            LocationTrackerService.stopTime.collect {
+                stopTime = it
+                if (stopTime != 0L) {
+                    showBiggerPicture()
+                }
+            }
+        }
+    }
+
+    private fun showBiggerPicture() {
+        val bounds = LatLngBounds.Builder()
+
+        for (location in locationList) {
+            bounds.include(location)
+        }
+        map.animateCamera(
+            CameraUpdateFactory.newLatLngBounds(
+                bounds.build(), 100
+            ), 2000, null
+        )
     }
 
     private fun drawPolyline() {

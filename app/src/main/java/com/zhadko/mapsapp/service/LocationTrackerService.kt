@@ -24,6 +24,7 @@ import com.zhadko.mapsapp.utils.Const.ACTION_STOP_LOCATION_TRACK
 import com.zhadko.mapsapp.utils.Const.NOTIFICATION_CHANNEL_ID
 import com.zhadko.mapsapp.utils.Const.NOTIFICATION_CHANNEL_NAME
 import com.zhadko.mapsapp.utils.Const.NOTIFICATION_ID
+import com.zhadko.mapsapp.utils.map.MapUtil.calculateTheDistance
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -53,6 +54,7 @@ class LocationTrackerService : Service() {
             result.locations.let { locations ->
                 for (location in locations) {
                     updateLocationList(location)
+                    updateNotificationPeriodically()
                 }
             }
         }
@@ -127,6 +129,14 @@ class LocationTrackerService : Service() {
 
     private fun removeLocationUpdates() {
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+    }
+
+    private fun updateNotificationPeriodically() {
+        notification.apply {
+            setContentTitle("Distance Travelled")
+            setContentText(calculateTheDistance(locationList.value) + "km")
+        }
+        notificationManager.notify(NOTIFICATION_ID, notification.build())
     }
 
     private fun createNotificationChannel() {
