@@ -12,9 +12,11 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.GoogleMap.OnMyLocationClickListener
+import com.google.android.gms.maps.MapFragment
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.ButtCap
@@ -26,10 +28,13 @@ import com.google.android.gms.maps.model.PolylineOptions
 import com.zhadko.mapsapp.R
 import com.zhadko.mapsapp.base.BaseFragment
 import com.zhadko.mapsapp.databinding.FragmentMapBinding
+import com.zhadko.mapsapp.model.Result
 import com.zhadko.mapsapp.service.LocationTrackerService
 import com.zhadko.mapsapp.utils.Const.ACTION_START_LOCATION_TRACK
 import com.zhadko.mapsapp.utils.Const.ACTION_STOP_LOCATION_TRACK
 import com.zhadko.mapsapp.utils.extensions.checkSinglePermission
+import com.zhadko.mapsapp.utils.map.MapUtil.calculateElapsedTime
+import com.zhadko.mapsapp.utils.map.MapUtil.calculateTheDistance
 import com.zhadko.mapsapp.utils.map.MapUtil.setCameraPosition
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -149,6 +154,7 @@ class MapFragment :
                 stopTime = it
                 if (stopTime != 0L) {
                     showBiggerPicture()
+                    displayResults()
                 }
             }
         }
@@ -165,6 +171,25 @@ class MapFragment :
                 bounds.build(), 100
             ), 2000, null
         )
+    }
+
+    private fun displayResults() {
+        val result = Result(
+            time = calculateElapsedTime(startTime, stopTime),
+            distance = calculateTheDistance(locationList)
+        )
+        lifecycleScope.launch {
+            delay(2500)
+            navigateToResultScreen(result)
+            binding.startButton.apply {
+                isVisible = false
+                isEnabled = true
+            }
+            with(binding) {
+                stopButton.isVisible = false
+                resetButton.isVisible = true
+            }
+        }
     }
 
     private fun drawPolyline() {
@@ -230,5 +255,9 @@ class MapFragment :
         } else {
             locationPermissionsLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
+    }
+
+    private fun navigateToResultScreen(result:Result) {
+        findNavController().navigate(MapFragmentDirections.actionMapFragmentToResultFragment(result))
     }
 }

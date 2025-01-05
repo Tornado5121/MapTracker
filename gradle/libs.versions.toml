@@ -20,6 +20,7 @@ navVersion = "2.8.5"
 playServicesMaps = "21.3.0"
 hilt = "2.50"
 playServicesMapsVersion = "19.0.0"
+navigationSafeArgs = "2.8.5"
 
 [libraries]
 android-maps-utils = { module = "com.google.maps.android:android-maps-utils", version.ref = "androidMapsUtils" }
@@ -46,6 +47,8 @@ play-services-maps = { module = "com.google.android.gms:play-services-maps", ver
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 org-jetbrains-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+org-jetbrains-kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 dagger_hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+navigation_safe_args = { id = "androidx.navigation.safeargs.kotlin", version.ref = "navigationSafeArgs" }
 
 

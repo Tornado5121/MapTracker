@@ -5,4 +5,8 @@
     <string name="satellite">Satellite</string>
     <string name="terrain">Terrain</string>
     <string name="none">None</string>
+    <string name="distance">Distance</string>
+    <string name="time">Time</string>
+    <string name="share">Share</string>
+    <string name="result">%1%1$s km</string>
 </resources>

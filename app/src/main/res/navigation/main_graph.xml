@@ -9,5 +9,21 @@
         android:id="@+id/mapFragment"
         android:name="com.zhadko.mapsapp.screens.mapScreen.MapFragment"
         android:label="fragment_map"
-        tools:layout="@layout/fragment_map" />
+        tools:layout="@layout/fragment_map" >
+        <action
+            android:id="@+id/action_mapFragment_to_resultFragment"
+            app:destination="@id/resultFragment" />
+    </fragment>
+    <dialog
+        android:id="@+id/resultFragment"
+        android:name="com.zhadko.mapsapp.screens.resultScreen.ResultFragment"
+        android:label="fragment_result"
+        tools:layout="@layout/fragment_result" >
+        <action
+            android:id="@+id/action_resultFragment_to_mapFragment"
+            app:destination="@id/mapFragment" />
+        <argument
+            android:name="result"
+            app:argType="com.zhadko.mapsapp.model.Result" />
+    </dialog>
 </navigation>
