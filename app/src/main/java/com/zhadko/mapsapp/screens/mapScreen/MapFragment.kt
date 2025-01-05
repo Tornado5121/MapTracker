@@ -13,10 +13,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener
 import com.google.android.gms.maps.GoogleMap.OnMyLocationClickListener
-import com.google.android.gms.maps.MapFragment
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.ButtCap
@@ -24,6 +26,9 @@ import com.google.android.gms.maps.model.JointType
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import com.zhadko.mapsapp.R
 import com.zhadko.mapsapp.base.BaseFragment
@@ -44,13 +49,18 @@ import kotlinx.coroutines.launch
 class MapFragment :
     BaseFragment<FragmentMapBinding>(FragmentMapBinding::inflate),
     OnMapReadyCallback,
+    OnMarkerClickListener,
     OnMyLocationClickListener {
 
     companion object {
         private const val MAP_LOG = "MAP_LOG"
     }
 
+    private var markerList = mutableListOf<Marker?>()
     private var locationList = mutableListOf<LatLng>()
+    private var polylineList = mutableListOf<Polyline>()
+
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
     private var startTime = 0L
     private var stopTime = 0L
@@ -86,7 +96,37 @@ class MapFragment :
         with(binding) {
             startButton.setOnClickListener { onStartButtonClicked() }
             stopButton.setOnClickListener { onStopButtonClicked() }
-            resetButton.setOnClickListener { }
+            resetButton.setOnClickListener { onResetButtonClicked() }
+        }
+        fusedLocationProviderClient =
+            LocationServices.getFusedLocationProviderClient(requireActivity())
+    }
+
+    private fun onResetButtonClicked() {
+        mapReset()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun mapReset() {
+        fusedLocationProviderClient.lastLocation.addOnCompleteListener {
+            val lastKnownLocation = LatLng(
+                it.result.latitude,
+                it.result.longitude,
+            )
+            for (polyline in polylineList) {
+                polyline.remove()
+            }
+            map.animateCamera(
+                CameraUpdateFactory.newCameraPosition(
+                    setCameraPosition(lastKnownLocation)
+                )
+            )
+            locationList.clear()
+            for (marker in markerList) {
+                marker?.remove()
+            }
+            binding.resetButton.isVisible = false
+            binding.startButton.isVisible = true
         }
     }
 
@@ -117,10 +157,12 @@ class MapFragment :
         }
     }
 
+    @SuppressLint("PotentialBehaviorOverride")
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         setupCustomMapStyle()
         map.setOnMyLocationClickListener(this)
+        map.setOnMarkerClickListener(this)
         map.uiSettings.apply {
             isZoomControlsEnabled = false
             isZoomGesturesEnabled = false
@@ -171,6 +213,8 @@ class MapFragment :
                 bounds.build(), 100
             ), 2000, null
         )
+        addMarker(locationList.first())
+        addMarker(locationList.last())
     }
 
     private fun displayResults() {
@@ -193,7 +237,7 @@ class MapFragment :
     }
 
     private fun drawPolyline() {
-        map.addPolyline(
+        val polyline = map.addPolyline(
             PolylineOptions().apply {
                 width(10f)
                 color(Color.BLUE)
@@ -203,6 +247,7 @@ class MapFragment :
                 addAll(locationList)
             }
         )
+        polylineList.add(polyline)
     }
 
     private fun followPolyLine() {
@@ -257,7 +302,16 @@ class MapFragment :
         }
     }
 
-    private fun navigateToResultScreen(result:Result) {
+    private fun addMarker(position: LatLng) {
+        val marker = map.addMarker(MarkerOptions().position(position))
+        markerList.add(marker)
+    }
+
+    private fun navigateToResultScreen(result: Result) {
         findNavController().navigate(MapFragmentDirections.actionMapFragmentToResultFragment(result))
+    }
+
+    override fun onMarkerClick(p0: Marker): Boolean {
+        return true
     }
 }
